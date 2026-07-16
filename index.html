@@ -1,1 +1,295 @@
-<!doctype html><meta http-equiv="refresh" content="5"><title>Veritas Autopilot</title><body style="background:#0d1117;color:#e6edf3;font-family:sans-serif;padding:40px"><h2>Veritas Autopilot</h2><p>Live dashboard initialising — first run will populate this within ~2 hours.</p></body>
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="180">
+<title>Veritas Autopilot</title>
+<style>
+:root { color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117; color: #e6edf3;
+  font: 14px/1.5 -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+a { color: #58a6ff; text-decoration: none; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 56px; }
+
+.topbar { display: flex; align-items: center; gap: 14px; padding: 16px 0;
+  border-bottom: 1px solid #21262d; margin-bottom: 14px; flex-wrap: wrap; }
+.mark { display: flex; align-items: center; gap: 10px; }
+.mark .sq { width: 9px; height: 9px; border-radius: 2px; }
+.sq.live { background: #3fb950; animation: blink 2.4s ease-in-out infinite; }
+.sq.idle { background: #d29922; }
+.sq.wait { background: #6e7681; }
+.sq.paused { background: #d29922; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+.mark b { font-size: 13px; font-weight: 600; letter-spacing: 2.5px; }
+.statew { font-size: 12px; color: #8b949e; }
+.statew b { color: #e6edf3; font-weight: 600; }
+.statew b.p { color: #d29922; }
+.topbar .right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.clock { font-size: 12px; color: #6e7681; }
+.btn { font: 600 12px/1 inherit; letter-spacing: .5px; cursor: pointer;
+  padding: 8px 16px; border-radius: 6px; border: 1px solid #30363d;
+  background: #161b22; color: #e6edf3; transition: all .15s ease; }
+.btn:hover { border-color: #8b949e; }
+.btn.warn { border-color: rgba(210,153,34,.5); color: #d29922; }
+.btn.warn:hover { background: rgba(210,153,34,.1); }
+.btn.go { border-color: rgba(63,185,80,.5); color: #3fb950; }
+.btn.go:hover { background: rgba(63,185,80,.1); }
+
+.meta { font-size: 12px; color: #8b949e; margin-bottom: 20px; }
+.meta b { color: #e6edf3; font-weight: 600; }
+.meta span + span::before { content: "·"; margin: 0 8px; color: #30363d; }
+
+.banner { border: 1px solid rgba(210,153,34,.45); background: rgba(210,153,34,.07);
+  color: #d29922; font-size: 13px; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; }
+
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid #21262d;
+  border-radius: 8px; background: #11151c; margin-bottom: 14px; overflow: hidden; }
+.kpi { padding: 16px 18px 14px; border-right: 1px solid #21262d; }
+.kpi:last-child { border-right: none; }
+.kpi b { display: block; font-size: 26px; font-weight: 600; letter-spacing: -.5px; }
+.kpi span { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+.kpi .hot { color: #f85149; } .kpi .pos { color: #3fb950; }
+.meter { height: 3px; background: #21262d; border-radius: 2px; margin-top: 9px; overflow: hidden; }
+.meter div { height: 100%; background: #3fb950; border-radius: 2px; width: 0;
+  transition: width .9s ease .2s; }
+@media (max-width: 880px) { .kpis { grid-template-columns: repeat(2, 1fr); } .kpi { border-bottom: 1px solid #21262d; } }
+
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+.panel { grid-column: span 6; background: #11151c; border: 1px solid #21262d;
+  border-radius: 8px; padding: 18px; animation: fade .4s ease both; }
+.panel.wide { grid-column: span 12; }
+@media (max-width: 880px) { .panel { grid-column: span 12; } }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } }
+.panel h2 { font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1.5px; color: #8b949e; margin-bottom: 14px; }
+.note { font-size: 12px; color: #6e7681; margin-top: 12px; }
+
+.chart { display: flex; align-items: flex-end; gap: 4px; height: 110px; }
+.chart .day { flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 6px; height: 100%; justify-content: flex-end; }
+.chart .bar { width: 100%; max-width: 30px; border-radius: 2px 2px 0 0; position: relative;
+  background: #1f6feb; opacity: .85; min-height: 2px; transform-origin: bottom;
+  animation: grow .5s ease both; }
+.chart .bar:hover { opacity: 1; }
+.chart .bar .rep { position: absolute; left: 0; right: 0; bottom: 0; background: #3fb950; }
+@keyframes grow { from { transform: scaleY(0); } }
+.chart .lbl { font-size: 10px; color: #6e7681; }
+.legend { display: flex; gap: 14px; margin-top: 10px; font-size: 11px; color: #8b949e; }
+.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+
+.ab { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.arm { border-top: 2px solid; padding-top: 12px; }
+.arm.vt { border-color: #58a6ff; } .arm.ct { border-color: #bc8cff; }
+.arm h3 { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.arm.vt h3 { color: #58a6ff; } .arm.ct h3 { color: #bc8cff; }
+.arm .rate { font-size: 26px; font-weight: 600; }
+.arm .m { font-size: 12px; color: #8b949e; margin-top: 2px; }
+.lead { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  color: #3fb950; margin-top: 6px; }
+
+.mprog { display: flex; justify-content: space-between; font-size: 12px;
+  color: #8b949e; margin-bottom: 6px; }
+.mprog b { color: #e6edf3; }
+.mbar { height: 4px; background: #21262d; border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
+.mbar div { height: 100%; background: #58a6ff; border-radius: 2px; width: 0;
+  transition: width .9s ease .3s; }
+.mlist { list-style: none; }
+.mlist li { display: flex; gap: 10px; align-items: baseline; font-size: 13px;
+  padding: 5px 0; color: #8b949e; }
+.mlist li.done { color: #e6edf3; }
+.mlist .tick { font-size: 11px; width: 14px; color: #30363d; }
+.mlist li.done .tick { color: #3fb950; }
+
+.tw { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; color: #6e7681; font-weight: 600; font-size: 10px;
+  text-transform: uppercase; letter-spacing: 1px; padding: 0 10px 8px 0;
+  border-bottom: 1px solid #21262d; white-space: nowrap; }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid #1a2029; vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: rgba(88,166,255,.05); }
+.sub { color: #6e7681; font-size: 11px; }
+.tag { font-size: 10px; font-weight: 700; letter-spacing: .5px; }
+.tVT { color: #58a6ff; } .tCT { color: #bc8cff; }
+.cls { font-size: 10px; font-weight: 700; letter-spacing: .5px; }
+.cHOT { color: #f85149; } .cWARM { color: #d29922; } .cCOLD { color: #8b949e; }
+.cINFO { color: #58a6ff; } .cBOUNCE { color: #6e7681; } .cUNSUBSCRIBE { color: #bc8cff; }
+.empty { color: #6e7681; font-size: 13px; }
+ul.learn { list-style: none; }
+ul.learn li { font-size: 13px; padding: 7px 0; border-bottom: 1px solid #1a2029;
+  color: #c9d1d9; }
+ul.learn li:last-child { border-bottom: none; }
+footer { margin-top: 20px; color: #484f58; font-size: 11px; }
+
+#toasts { position: fixed; bottom: 18px; right: 18px; z-index: 90; display: flex;
+  flex-direction: column; gap: 8px; max-width: 320px; }
+.toast { background: #161b22; border: 1px solid #30363d; border-left: 2px solid #58a6ff;
+  border-radius: 6px; padding: 10px 14px; font-size: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: tin .3s ease both; }
+.toast.out { animation: tout .3s ease both; }
+@keyframes tin { from { opacity: 0; transform: translateY(8px); } }
+@keyframes tout { to { opacity: 0; transform: translateX(20px); } }
+.toast .k { font-weight: 700; font-size: 10px; letter-spacing: 1px; margin-right: 8px; }
+.toast .when { color: #6e7681; margin-left: 6px; }
+.toast.hot { border-left-color: #f85149; }
+.toast.hot .k { color: #f85149; }
+.toast.pos { border-left-color: #3fb950; } .toast.pos .k { color: #3fb950; }
+.toast.mut .k { color: #8b949e; }
+.toast:not(.hot):not(.pos):not(.mut) .k { color: #58a6ff; }
+
+#overlay { position: fixed; inset: 0; background: rgba(1,4,9,.7); z-index: 100;
+  display: none; align-items: center; justify-content: center; padding: 18px; }
+#overlay.open { display: flex; animation: fade .2s ease; }
+.modal { width: 100%; max-width: 540px; max-height: 80vh; overflow-y: auto;
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 22px;
+  animation: mod .25s ease both; box-shadow: 0 16px 48px rgba(0,0,0,.6); }
+@keyframes mod { from { opacity: 0; transform: translateY(12px); } }
+.modal .mh { display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; margin-bottom: 10px; }
+.modal h3 { font-size: 15px; font-weight: 600; }
+.modal .x { cursor: pointer; border: 1px solid #30363d; background: none; color: #8b949e;
+  border-radius: 6px; padding: 3px 10px; font-size: 13px; }
+.modal .x:hover { color: #e6edf3; }
+.modal .chips { font-size: 11px; color: #8b949e; margin-bottom: 12px; }
+.modal .chips span + span::before { content: "·"; margin: 0 7px; color: #30363d; }
+.modal .msub { font-size: 13px; color: #58a6ff; margin-bottom: 10px; }
+.modal .body { background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+  padding: 14px; font-size: 13px; white-space: pre-wrap; line-height: 1.6; color: #c9d1d9; }
+</style>
+</head><body>
+<div class="wrap">
+<div class="topbar">
+  <div class="mark"><div class="sq live"></div><b>VERITAS AUTOPILOT</b></div>
+  <div class="statew"><b>LIVE</b> <span>· last run 4 min ago</span></div>
+  <div class="right"><span class="statew">🟢 cloud · runs every 2h</span><span class="clock" id="clock"></span></div>
+</div>
+
+<div class="meta">
+  <span>Niche: <b>Electricians</b></span>
+  <span>Streak: <b>1 day</b></span>
+  <span>Daily limit ramps +5 per send day to <b>60</b></span>
+  <span>Runs every 2h in the cloud · laptop off</span>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><b><span data-count="5">0</span><span style="color:#6e7681;font-size:16px"> / 15</span></b>
+    <span>sent today</span><div class="meter"><div data-w="33%"></div></div></div>
+  <div class="kpi"><b data-count="23">0</b><span>total sent</span></div>
+  <div class="kpi"><b class="pos" data-count="0.0" data-suffix="%">0%</b><span>reply rate</span></div>
+  <div class="kpi"><b class="hot" data-count="0">0</b><span>hot leads</span></div>
+  <div class="kpi"><b data-count="25">0</b><span>in sequence</span></div>
+</div>
+
+<div class="grid">
+  <section class="panel"><h2>Activity — last 14 days</h2><div class="chart"><div class="day"><div class="bar" style="height:2%;animation-delay:0ms" title="0 sent, 0 replies"></div><div class="lbl">F</div></div><div class="day"><div class="bar" style="height:2%;animation-delay:30ms" title="0 sent, 0 replies"></div><div class="lbl">S</div></div><div class="day"><div class="bar" style="height:2%;animation-delay:60ms" title="0 sent, 0 replies"></div><div class="lbl">S</div></div><div class="day"><div class="bar" style="height:2%;animation-delay:90ms" title="0 sent, 0 replies"></div><div class="lbl">M</div></div><div class="day"><div class="bar" style="height:2%;animation-delay:120ms" title="0 sent, 0 replies"></div><div class="lbl">T</div></div><div class="day"><div class="bar" style="height:2%;animation-delay:150ms" title="0 sent, 0 replies"></div><div class="lbl">W</div></div><div class="day"><div class="bar" style="height:100%;animation-delay:180ms" title="9 sent, 2 replies"><div class="rep" style="height:22%"></div></div><div class="lbl">T</div></div><div class="day"><div class="bar" style="height:11%;animation-delay:210ms" title="1 sent, 0 replies"></div><div class="lbl">F</div></div><div class="day"><div class="bar" style="height:2%;animation-delay:240ms" title="0 sent, 0 replies"></div><div class="lbl">S</div></div><div class="day"><div class="bar" style="height:2%;animation-delay:270ms" title="0 sent, 0 replies"></div><div class="lbl">S</div></div><div class="day"><div class="bar" style="height:44%;animation-delay:300ms" title="4 sent, 0 replies"></div><div class="lbl">M</div></div><div class="day"><div class="bar" style="height:44%;animation-delay:330ms" title="4 sent, 0 replies"></div><div class="lbl">T</div></div><div class="day"><div class="bar" style="height:2%;animation-delay:360ms" title="0 sent, 0 replies"></div><div class="lbl">W</div></div><div class="day"><div class="bar" style="height:55%;animation-delay:390ms" title="5 sent, 0 replies"></div><div class="lbl">T</div></div></div><div class="legend"><span><i style="background:#1f6feb"></i>sent</span><span><i style="background:#3fb950"></i>replies</span></div></section>
+  <section class="panel"><h2>A/B test</h2><div class="ab"><div class="arm vt"><h3>Veritas Technique</h3><div class="rate">0.0%</div><div class="m">5 sent · 0 replies · 0 hot</div></div><div class="arm ct"><h3>Claude Technique</h3><div class="rate">0.0%</div><div class="m">18 sent · 0 replies · 0 hot</div></div></div>
+    <p class="note">Prospects are split 50/50 between techniques. Click any row below to read the actual email.</p></section>
+
+  <section class="panel"><h2>Up next</h2><div class="tw"><table><tr><th>due</th><th>arm</th><th>step</th><th>business</th></tr><tr class='click' data-m='q0'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>Newcastle Electricians</td></tr><tr class='click' data-m='q1'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tVT'>VT</span></td><td>initial</td><td>HIB Electrical, Air &amp; Solar</td></tr><tr class='click' data-m='q2'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>CabledIn Electrical Solutions</td></tr><tr class='click' data-m='q3'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>Trusted Electrical</td></tr><tr class='click' data-m='q4'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>Brightwave Electrical</td></tr><tr class='click' data-m='q5'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>Sparking Larkings Electrical Contractors</td></tr><tr class='click' data-m='q6'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>Eastern Melbourne Electricians</td></tr><tr class='click' data-m='q7'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tVT'>VT</span></td><td>initial</td><td>Melbourne Electrical Co</td></tr><tr class='click' data-m='q8'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tVT'>VT</span></td><td>initial</td><td>Millerwatts Electricians</td></tr><tr class='click' data-m='q9'><td>2026-07-17<br><span class='sub'>08:30</span></td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>Electrx</td></tr></table></div></section>
+  <section class="panel"><h2>Recently sent</h2><div class="tw"><table><tr><th>when</th><th>arm</th><th>step</th><th>business</th></tr><tr class='click' data-m='s0'><td>07-16 09:06</td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>LIGHTS ON ADELAIDE<br><span class='sub'>Helping Lights On Adelaide Shine Online</span></td></tr><tr class='click' data-m='s1'><td>07-16 09:04</td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>PWA Electrical Services<br><span class='sub'>PWA Electrical Services&#x27; Online Growth</span></td></tr><tr class='click' data-m='s2'><td>07-16 09:02</td><td><span class='tag tVT'>VT</span></td><td>initial</td><td>Voltage Electrical Contracting<br><span class='sub'>Quick question Rohen</span></td></tr><tr class='click' data-m='s3'><td>07-16 09:00</td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>PRF Electrical Services<br><span class='sub'>Still chasing that golf game, Phil?</span></td></tr><tr class='click' data-m='s4'><td>07-16 08:58</td><td><span class='tag tCT'>CT</span></td><td>fu1</td><td>Just-In Time Electrical<br><span class='sub'>Re: Pullenvale Hall Christmas lights</span></td></tr><tr class='click' data-m='s5'><td>07-14 11:05</td><td><span class='tag tCT'>CT</span></td><td>initial</td><td>In Effect Electrical<br><span class='sub'>38 lights before arvo smoko</span></td></tr><tr class='click' data-m='s6'><td>07-14 10:05</td><td><span class='tag tCT'>CT</span></td><td>fu1</td><td>Morgan Electrical Pty Ltd<br><span class='sub'>Re: Back2Life Bathrooms keeps calling you back</span></td></tr><tr class='click' data-m='s7'><td>07-14 09:06</td><td><span class='tag tCT'>CT</span></td><td>fu1</td><td>Dawson Electric<br><span class='sub'>Re: Born the same day as your first kid</span></td></tr></table></div></section>
+
+  <section class="panel"><h2>Replies</h2><div class="tw"><table><tr><th>when</th><th>class</th><th>business</th></tr><tr><td>07-09 15:05</td><td><span class='cls cUNSUBSCRIBE'>UNSUBSCRIBE</span></td><td>JNA Electrical QLD</td></tr><tr><td>07-09 15:05</td><td><span class='cls cBOUNCE'>BOUNCE</span></td><td>Connex Electrical</td></tr></table></div></section>
+  <section class="panel"><h2>Milestones</h2><div class="mprog"><b>Next: 50 emails out</b><span>23 / 50</span></div><div class="mbar"><div data-w="32%"></div></div><ul class="mlist"><li class="done"><span class="tick">✓</span>First email sent</li><li class="done"><span class="tick">✓</span>10 emails out</li><li class=""><span class="tick">○</span>50 emails out</li><li class=""><span class="tick">○</span>100 emails out</li><li class=""><span class="tick">○</span>250 emails out</li><li class=""><span class="tick">○</span>500 emails out</li><li class=""><span class="tick">○</span>1,000 emails out</li></ul></section>
+
+  <section class="panel wide"><h2>Learnings</h2><ul class="learn"><li class="empty">The learning engine reports in after the first full batch, then updates every Friday.</li></ul></section>
+</div>
+<footer>Generated Thu 16 Jul 2026 21:23:36 · refreshes every 3 minutes · updated on every engine tick</footer>
+</div>
+
+<div id="toasts"></div>
+<div id="overlay"><div class="modal">
+  <div class="mh"><h3 id="mtitle"></h3><button class="x" onclick="closeModal()">✕</button></div>
+  <div class="chips" id="mchips"></div>
+  <p class="msub" id="msub"></p>
+  <div class="body" id="mbody"></div>
+</div></div>
+
+<script>
+var TOASTS = [{"k": "DIGEST", "cls": "mut", "s": "sent", "at": "07-16 20:12"}, {"k": "EMAIL_REJECTED", "cls": "mut", "s": "AJB Electrical Contracting initial: compliance: Banned phrase present: &#x27;I notice", "at": "07-16 20:09"}, {"k": "EMAIL_REJECTED", "cls": "mut", "s": "Sustainable Electrical Solutions Canberra Pty Ltd initial: The email, while conc", "at": "07-16 12:36"}, {"k": "SENT", "cls": "", "s": "initial -&gt; ••• (CT)", "at": "07-16 09:06"}, {"k": "SENT", "cls": "", "s": "initial -&gt; ••• (CT)", "at": "07-16 09:04"}, {"k": "SENT", "cls": "", "s": "initial -&gt; ••• (VT)", "at": "07-16 09:02"}, {"k": "SENT", "cls": "", "s": "initial -&gt; ••• (CT)", "at": "07-16 09:00"}, {"k": "REMOVED", "cls": "mut", "s": "••• auto-suppressed (bounce)", "at": "07-16 09:00"}, {"k": "SENT", "cls": "", "s": "fu1 -&gt; ••• (CT)", "at": "07-16 08:58"}, {"k": "PROSPECT_REJECTED", "cls": "mut", "s": "Melbourne General Electrical Services: null", "at": "07-16 07:00"}, {"k": "PROSPECT_REJECTED", "cls": "mut", "s": "HOTT Electrics: null", "at": "07-16 07:00"}, {"k": "PROSPECT_REJECTED", "cls": "mut", "s": "Costa Electrical Services: null", "at": "07-16 05:11"}, {"k": "PROSPECT_REJECTED", "cls": "mut", "s": "Beaumont Electrical: null", "at": "07-16 05:11"}, {"k": "PROSPECT_REJECTED", "cls": "mut", "s": "J &amp; P Electrical: null", "at": "07-16 05:11"}];
+var MODALS = {"s0": {"title": "LIGHTS ON ADELAIDE", "chips": ["CT", "initial", "judge 7/10", "2026-07-16 09:06"], "sub": "Helping Lights On Adelaide Shine Online", "body": "Hey, \nWith a founding belief that every home and business in Adelaide deserves honest, expert electrical work done right the first time, Lights On Adelaide stands out. Our services can help enhance your online presence, making it easier for customers to find you when they need professional electrical services. \nCan we schedule a call to explore how our services can help Lights On Adelaide reach more customers?\nCheers,\nSean"}, "s1": {"title": "PWA Electrical Services", "chips": ["CT", "initial", "judge 7/10", "2026-07-16 09:04"], "sub": "PWA Electrical Services' Online Growth", "body": "Hey Nick, PWA Electrical Services stands out with 4.9 stars across 187 reviews, praising your team's punctuality and proactive communication. As a family-run business with 30+ years of experience, Veritas Digital's services can help enhance your online presence. Would you be open to discussing how our services can support PWA Electrical Services?"}, "s2": {"title": "Voltage Electrical Contracting", "chips": ["VT", "initial", "judge 6/10", "2026-07-16 09:02"], "sub": "Quick question Rohen", "body": "Hey Rohen,\n\nNot many sparkies bother joining the Independent Beer Association. That plus the Fox Friday taproom fit-out tells me Voltage actually lives in that brewery world.\n\nJust wanted to quickly reach out because we help plumbers, sparkies and HVAC companies like Jim's and ConAir across Australia bring in more customers through tailored digital strategies, and I thought Voltage Electrical Contracting could be a great fit.\n\nAre you free for a call this week?\n\nCheers,\nSean"}, "s3": {"title": "PRF Electrical Services", "chips": ["CT", "initial", "judge 8/10", "2026-07-16 09:00"], "sub": "Still chasing that golf game, Phil?", "body": "Hey Phil,\n\nYour LinkedIn bio about wanting enough time to play golf made me laugh. More than half a decade and counting. Running a business since 1985 while volunteering with Rotary in both Darwin and Freo doesn't leave much tee time.\n\nA bloke with 40 years of reputation shouldn't need to chase enquiries. But your site buries the proof. No reviews on the homepage, no quick way for someone to request a quote without hunting for a phone number.\n\nYour customers on SolarQuotes are calling the work \"way beyond expected.\" That should be front and centre, not hidden three clicks deep.\n\nHappy to show you one change on your site that could turn visits into quote requests without you picking up the phone.\n\nCheers,\nSean"}, "s4": {"title": "Just-In Time Electrical", "chips": ["CT", "fu1", "judge 7/10", "2026-07-16 08:58"], "sub": "Re: Pullenvale Hall Christmas lights", "body": "Hey Justin, your commitment to the local community, including sponsoring Kenmore Bears, showcases your business's values. At Veritas Digital, we've helped similar local businesses enhance their online presence to better serve their communities. Perhaps we could explore how our expertise can support your electrical services business. Cheers, Sean"}, "s5": {"title": "In Effect Electrical", "chips": ["CT", "initial", "judge 7/10", "2026-07-14 11:05"], "sub": "38 lights before arvo smoko", "body": "Hey Keith,\n\nRead through your reviews and one stood out. A customer mentioned your crew replaced 38 lights and had the place tidier than when they arrived, all wrapped up by mid-afternoon. That says more about how you run things than any ad ever could.\n\nYou've built In Effect on word-of-mouth and referrals for 20 years, which is rare. A website that works as hard as your reputation could bring in new jobs without you having to chase them. Happy to share a few ideas on what that might look like for a sparky in Malaga.\n\nWorth a quick chat?\n\nCheers,\nSean"}, "s6": {"title": "Morgan Electrical Pty Ltd", "chips": ["CT", "fu1", "judge 7/10", "2026-07-14 10:05"], "sub": "Re: Back2Life Bathrooms keeps calling you back", "body": "Hey Ben,\n\nSent you a note last week about your MyAir work. Had one more thought worth sharing either way.\n\nMost sparkies who specialise in Advantage Air don't call it out prominently in their Google Business profile. Worth double-checking yours is making the most of it. Takes five minutes, costs nothing, and helps Northside homeowners find you when they search for MyAir installation specifically.\n\nHappy to point you at a couple more quick wins if you're interested.\n\nCheers,\nSean"}, "s7": {"title": "Dawson Electric", "chips": ["CT", "fu1", "judge 8/10", "2026-07-14 09:06"], "sub": "Re: Born the same day as your first kid", "body": "Hey Dylan,\n\nFollowing up on my note last week. That origin story on your Why Choose page, business launched the same day your first kid was born, is the kind of thing that turns website visitors into calls. A short \"Our Story\" piece timed around next week's anniversary would give Google fresh content and give homeowners a reason to pick you over the other two sparkies on page one.\n\nAnniversary's next Friday. Want me to mock something up before then?\n\nCheers,\nSean"}, "q0": {"title": "Newcastle Electricians", "chips": ["CT", "initial", "due 2026-07-17"], "sub": "Growing Newcastle Electricians' Online Presence", "body": "Hey Chad, Newcastle Electricians' commitment to 24/7 emergency call outs and upfront quotes showcases a customer-centric approach. This unique service can be leveraged to attract more customers online. Let's schedule a call to discuss how to showcase these strengths, Cheers, Sean"}, "q1": {"title": "HIB Electrical, Air & Solar", "chips": ["VT", "initial", "due 2026-07-17"], "sub": "(written closer to send)", "body": "This email is researched and written closer to its send date so it uses the freshest information."}, "q2": {"title": "CabledIn Electrical Solutions", "chips": ["CT", "initial", "due 2026-07-17"], "sub": "(written closer to send)", "body": "This email is researched and written closer to its send date so it uses the freshest information."}, "q3": {"title": "Trusted Electrical", "chips": ["CT", "initial", "due 2026-07-17"], "sub": "(written closer to send)", "body": "This email is researched and written closer to its send date so it uses the freshest information."}, "q4": {"title": "Brightwave Electrical", "chips": ["CT", "initial", "due 2026-07-17"], "sub": "(written closer to send)", "body": "This email is researched and written closer to its send date so it uses the freshest information."}, "q5": {"title": "Sparking Larkings Electrical Contractors", "chips": ["CT", "initial", "due 2026-07-17"], "sub": "(written closer to send)", "body": "This email is researched and written closer to its send date so it uses the freshest information."}, "q6": {"title": "Eastern Melbourne Electricians", "chips": ["CT", "initial", "due 2026-07-17"], "sub": "(written closer to send)", "body": "This email is researched and written closer to its send date so it uses the freshest information."}, "q7": {"title": "Melbourne Electrical Co", "chips": ["VT", "initial", "due 2026-07-17"], "sub": "(written closer to send)", "body": "This email is researched and written closer to its send date so it uses the freshest information."}, "q8": {"title": "Millerwatts Electricians", "chips": ["VT", "initial", "due 2026-07-17"], "sub": "(written closer to send)", "body": "This email is researched and written closer to its send date so it uses the freshest information."}, "q9": {"title": "Electrx", "chips": ["CT", "initial", "due 2026-07-17"], "sub": "(written closer to send)", "body": "This email is researched and written closer to its send date so it uses the freshest information."}};
+
+document.querySelectorAll('[data-count]').forEach(function (el) {
+  var target = parseFloat(el.getAttribute('data-count')) || 0;
+  var suffix = el.getAttribute('data-suffix') || '';
+  var dur = 700, t0 = null;
+  function step(ts) {
+    if (!t0) t0 = ts;
+    var p = Math.min((ts - t0) / dur, 1);
+    var eased = 1 - Math.pow(1 - p, 3);
+    var val = target * eased;
+    el.textContent = (target % 1 === 0 ? Math.round(val) : val.toFixed(1)) + suffix;
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+});
+
+setTimeout(function () {
+  document.querySelectorAll('[data-w]').forEach(function (el) {
+    el.style.width = el.getAttribute('data-w');
+  });
+}, 150);
+
+function tickClock() {
+  var d = new Date();
+  var el = document.getElementById('clock');
+  if (el) el.textContent =
+    d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) +
+    '  ' + d.toLocaleTimeString('en-AU', { hour12: false });
+}
+tickClock(); setInterval(tickClock, 1000);
+
+(function () {
+  if (!TOASTS.length) return;
+  var box = document.getElementById('toasts'), i = 0;
+  function show() {
+    var t = TOASTS[i % TOASTS.length]; i++;
+    var el = document.createElement('div');
+    el.className = 'toast ' + (t.cls || '');
+    el.innerHTML = '<span class="k">' + t.k + '</span>' + t.s +
+      (t.at ? '<span class="when">' + t.at + '</span>' : '');
+    box.appendChild(el);
+    setTimeout(function () { el.classList.add('out'); }, 5000);
+    setTimeout(function () { el.remove(); }, 5400);
+  }
+  setTimeout(show, 1400);
+  setInterval(show, 7500);
+})();
+
+var overlay = document.getElementById('overlay');
+document.querySelectorAll('tr.click').forEach(function (row) {
+  row.addEventListener('click', function () {
+    var m = MODALS[row.getAttribute('data-m')];
+    if (!m) return;
+    document.getElementById('mtitle').textContent = m.title;
+    document.getElementById('msub').textContent = m.sub;
+    document.getElementById('mbody').textContent = m.body;
+    document.getElementById('mchips').innerHTML =
+      m.chips.map(function (c) { return '<span>' + c + '</span>'; }).join('');
+    overlay.classList.add('open');
+  });
+});
+function closeModal() { overlay.classList.remove('open'); }
+overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeModal(); });
+document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') closeModal(); });
+
+function togglePause(btn) {
+  btn.disabled = true;
+  function attempt(url) { return fetch(url, { method: 'POST' }); }
+  attempt('/toggle')
+    .catch(function () { return attempt('http://localhost:8377/toggle'); })
+    .then(function (r) { if (!r.ok) throw 0; location.reload(); })
+    .catch(function () {
+      btn.disabled = false;
+      alert('Could not reach the live dashboard server.\n\n' +
+            'Start it once with:  python run.py serve\n' +
+            'Or pause from the terminal:  python run.py pause');
+    });
+}
+
+</script>
+</body></html>
